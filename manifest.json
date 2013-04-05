@@ -1,0 +1,17 @@
+{
+  "name": "Chrome UDP Socket Sample",
+  "description": "Chrome packaged app sample for receiving UDP message",
+  "version": "0.1",
+  "app": {
+    "background": {
+      "scripts": ["background.js"]
+    }
+  },
+  "permissions": [
+      {"socket": [
+          "udp-bind",
+          "udp-send-to"
+      ]}
+  ],
+  "icons": { "16": "icon-16.png", "48": "icon-48.png", "128": "icon-128.png" }
+}
