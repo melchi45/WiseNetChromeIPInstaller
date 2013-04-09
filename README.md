@@ -7,6 +7,9 @@ Chrome packaged app sample.
 
 ### note
 
-I think Chrome app can't send broadcast. because chrome.socket api hasn't setsockopt function.
+Now, you can't send broadcast message on chrome app. Because chrome.socket api hasn't setsockopt function.
+
+- https://code.google.com/p/chromium/issues/detail?id=125586
+- http://civic.xrea.jp/2013/04/09/chrome-app-udp-broadcast/
 
 

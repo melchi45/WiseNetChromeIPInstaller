@@ -32,7 +32,7 @@
                         self.connect_handler(socketInfo);
                     }
                     var reader = function(){
-                        chrome.socket.read(self.sock.socketId, 1024, function(recvInfo){
+                        chrome.socket.recvFrom(self.sock.socketId, 1024, function(recvInfo){
                             if (recvInfo.resultCode < 0){   // if error 
                                 return;
                             }
