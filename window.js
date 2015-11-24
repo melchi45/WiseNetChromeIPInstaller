@@ -1,31 +1,32 @@
 $(function(){
-    var receiver;
-
-    chrome.socket.getNetworkList(function(interfaces){
-        interfaces.forEach(function(ni){
-            console.log(ni);
-        });
-    });
+    var chat;
 
     $("#connect").click(function(){
-        receiver = new Receiver("0.0.0.0", 12345);
+        chat = new Chat("0.0.0.0", 12345);
 
-        receiver.onConnect(function(socketInfo){
+        chat.onConnect(function(socketInfo){
             console.log(socketInfo);
             $("#connect").attr("disabled", "disabled");
             $("#disconnect").removeAttr("disabled");
+            $("#send").removeAttr("disabled");
         });
-        receiver.onReceive(function(msg){
+        chat.onReceive(function(msg){
             console.log(msg);
             $("#receive").append("<div>" + msg + "</div>");
         });
 
-        receiver.start();
+        chat.start();
+    });
+    $("#send").click(function(){
+        var text = $("#textbox").val();
+        chat.send(text);
+        $("#textbox").val("");
     });
 
     $("#disconnect").click(function(){
-        receiver.end();
+        chat.end();
         $("#disconnect").attr("disabled", "disabled");
+        $("#send").attr("disabled");
         $("#connect").removeAttr("disabled");
     });
 
