@@ -7,10 +7,12 @@
       "scripts": ["background.js"]
     }
   },
+  // https://stackoverflow.com/questions/32073710/what-permission-is-needed-for-udp-in-a-chrome-app
   "sockets": {
       "udp": {
-          "send": [":12345"],
-          "bind": [":12345"]
+          "send": ["*"],
+          "bind": ["*"],
+          "multicastMembership": [""]
       }
 
   },
