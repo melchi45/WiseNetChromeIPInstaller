@@ -1,12 +1,14 @@
+// https://github.com/liviubalan/google-chrome-extension-test/blob/master/manifest.json
 {
   "name": "Chrome UDP Socket Sample",
   "description": "Chrome packaged app sample for receiving UDP message",
   "version": "0.1",
   "app": {
     "background": {
-      "scripts": ["background.js"]
+      "scripts": ["background.js", "scripts/require.js"]
     }
   },
+  "minimum_chrome_version": "33",
   // https://stackoverflow.com/questions/32073710/what-permission-is-needed-for-udp-in-a-chrome-app
   "sockets": {
       "udp": {
@@ -17,6 +19,23 @@
 
   },
   "permissions": [
+    // "activeTab",
+    // "alarms",
+    // "bookmarks",
+    // "browsingData",
+    // "contextMenus",
+    // "contentSettings",
+    // "debugger",
+    // "idle",
+    // "storage",
+    // "tabs",
+    // "tts",
+    // "ttsEngine",
+    // "webNavigation",
+    // "*://*/*",
+    "system.network",
+    "system.memory",
+    "system.cpu"
   ],
   "icons": { "16": "icon-16.png", "48": "icon-48.png", "128": "icon-128.png" }
 }

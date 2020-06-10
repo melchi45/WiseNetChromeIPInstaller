@@ -3,14 +3,18 @@
   <head>
       <script type="text/javascript" src="jquery-1.9.1.min.js"></script>
       <!-- <script type="text/javascript" src="chat.js"></script> -->
+      <script type="text/javascript" src="scripts/require.js"></script>
+      <script type="text/javascript" src="scripts/main.js"></script>
+      <script type="text/javascript" src="scripts/context.js"></script>
+      <script type="text/javascript" src="scripts/binary_parser.js"></script>
       <script type="text/javascript" src="window.js"></script>
   </head>
   <body>
     <div>UDP receiver</div>
     <div>
-        <button id="bind">Bind</button>
+        <button id="init">UDP Socket Init.</button>
         <button id="disconnect" disabled="disabled">Disconnect</button>
-        <input id="textbox" type="text" /><button id="send" disabled="disabled">Send</button>
+        <input id="textbox" type="text" /><button id="broadcast" disabled="disabled">Broadcast</button>
     </div>
     <div id="receive">
     </div>
