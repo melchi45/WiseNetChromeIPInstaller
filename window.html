@@ -7,6 +7,11 @@
       <script type="text/javascript" src="scripts/main.js"></script>
       <script type="text/javascript" src="scripts/context.js"></script>
       <script type="text/javascript" src="scripts/binary_parser.js"></script>
+      <!-- <script type="text/javascript" src="scripts/log4javascript.js"></script> -->
+      <!-- <script type="text/javascript" src="scripts/media/ump-player.js"></script> -->
+
+      <!-- <script type="text/javascript" src="scripts/media/ump/ump-player.js"></script> -->
+
       <script type="text/javascript" src="window.js"></script>
   </head>
   <body>
@@ -14,9 +19,13 @@
     <div>
         <button id="init">UDP Socket Init.</button>
         <button id="disconnect" disabled="disabled">Disconnect</button>
-        <input id="textbox" type="text" /><button id="broadcast" disabled="disabled">Broadcast</button>
+        <button id="broadcast" disabled="disabled">Broadcast</button>
+        <textarea id="result" maxlength="10000" rows="20" cols="200" style="width:calc(100% - 30px);min-width:600px;min-height:400px;"></textarea>
     </div>
-    <div id="receive">
+    <div>
+      <!-- <ump-player id="ump-player1" hostname="192.168.125.94" username="admin" password="5dnpqxla!!" channel="1" port="80"
+      profile="H.264" device="camera" width="640" height="320" style="position:relative;" statistics grunt></ump-player> -->
+    </div>
     </div>
   </body>
 </html>

@@ -18,6 +18,7 @@ $(function(){
     var BROADCAST_ADDR = "255.255.255.255";
     // var source = '0.0.0.0';
     // var dest = '192.168.125.93';
+    var resultElement = null;
 
     var cameraFormat = new Parser()
     .endianess('big')
@@ -44,6 +45,56 @@ $(function(){
 
     var str = 'SMC_DISCOVERY_MAGIC_IDENTIFIER';
     chrome = window['chrome'];
+
+    var htonl = function (h) {
+      // Mask off 8 bytes at a time then shift them into place
+      return [
+        (h & 0xFF000000) >>> 24,
+        (h & 0x00FF0000) >>> 16,
+        (h & 0x0000FF00) >>>  8,
+        (h & 0x000000FF) >>>  0,
+      ];
+    }
+    /**
+     * Convert a 32-bit quantity (long integer) from network byte order to host byte order (Big-Endian to Little-Endian).
+     *
+     * @param {Array|Buffer} buffer Array of octets or a nodejs Buffer to read value from
+     * @returns {number}
+     */
+    var ntohl = function (n) {
+      return (((0xFF & n[0]) << 24) +
+              ((0xFF & n[1]) << 16) +
+              ((0xFF & n[2]) << 8) +
+              ((0xFF & n[3])) >>> 0);
+    }
+    /**
+     * Convert a 16-bit quantity (short integer) from host byte order to network byte order (Little-Endian to Big-Endian).
+     *
+     * @param {number} budder Value to convert
+     * @returns {Array|Buffer} v Array of octets or a nodejs Buffer
+     */
+    var htons = function(h) {
+      // Mask off 8 bytes at a time then shift them into place
+      return [
+        (h & 0xFF00) >>>  8,
+        (h & 0x00FF) >>>  0,
+      ];
+    }
+    /**
+     * Convert a 16-bit quantity (short integer) from network byte order to host byte order (Big-Endian to Little-Endian).
+     *
+     * @param {Array|Buffer} b Array of octets or a nodejs Buffer to read value from
+     * @returns {number}
+     */
+    var ntohs = function (n, big) {
+      if(big) {
+        return (((0xFF & n[1]) << 8) +
+                ((0xFF & n[0])) >>> 0);
+      } else {
+        return (((0xFF & n[0]) << 8) +
+                ((0xFF & n[1])) >>> 0);
+      }
+    }
 
     function ab2str(buf) {
         return String.fromCharCode.apply(null, new Uint16Array(buf));
@@ -85,6 +136,19 @@ $(function(){
 
         return array.buffer;
     }
+
+    function scrollbottom() {
+      if (!('maxlength' in resultElement)) {
+        var max = resultElement.attributes.maxLength.value;
+        var length = resultElement.value.length;
+
+        if(length > max) {
+          resultElement.value = resultElement.value.slice(length - max);
+        }
+      }
+
+      resultElement.scrollTop = resultElement.scrollHeight;
+		}
 
     function onCreate(socketInfo) {
       console.log("socket created: " + socketInfo.socketId);
@@ -168,64 +232,98 @@ $(function(){
 
     function onReceive(info) {
       console.log("Received data on socket" + "(" + info.socketId + ")");
-     
+      console.log("received:", ab2str(info.data));     
       var byteData = new Uint8Array(info.data);
 
-      result = {};
+      var nModeLength = 1,
+          nPacketIDLength = 18,
+          nMacAddressLength = 18,
+          nIPAddressLength = 16,
+          nSubnetMaskLength = 16,
+          nGatewayLength = 16,
+          nChangePasswordLgenth = 20,
+          nReservedLegnth = 1,
+          nPortLength = 2,
+          nStatusLength = 1,
+          nDeviceNameLength = 10,
+          nNetworkModeLength = 1,
+          nchDDNSLength = 128;
+
+
+      var result = {};
 
       var index = 0;
-      result.nMode = byteData.subarray(index, 1);
-      index += 1;
-      result.chPacketId = byteData.subarray(index, 18);
-      index += 18;
-      result.chMAC = byteData.subarray(index, 18);
-      index += 18;
-      result.chIP = byteData.subarray(index, 16);
-      index += 16;
-      result.chSubnetMask = byteData.subarray(index, 16);
-      index += 16;
-      result.chGateway = byteData.subarray(index, 16);
-      index += 16;
-      result.chPassword = byteData.subarray(index, 20);
-      index += 20;
-      result.Reserved1 = byteData.subarray(index, 1);
-      index += 1;
-      result.nPort = byteData.subarray(index, 2);
-      index += 2;
-      result.nStatus = byteData.subarray(index, 1);
-      index += 1;
-      result.chDeviceName = byteData.subarray(index, 10);
-      index += 10;
-      result.Reserved2 = byteData.subarray(index, 1);
-      index += 1;
-      result.nHttpPort = byteData.subarray(index, 2);
-      index += 2;
-      result.nDevicePort = byteData.subarray(index, 2);
-      index += 2;
-      result.nTcpPort = byteData.subarray(index, 2);
-      index += 2;
-      result.nUdpPort = byteData.subarray(index, 2);
-      index += 2;
-      result.nUploadPort = byteData.subarray(index, 2);
-      index += 2;
-      result.nMulticastPort = byteData.subarray(index, 2);
-      index += 2;
-      result.nNetworkMode = byteData.subarray(index, 1);
-      index += 2;
-      result.chDDNS = byteData.subarray(index, 128);
+      result.nMode = byteData.subarray(index, 1)[0];
+
+      // console.log("mode:", result.nMode);
+      index += nModeLength;
+      result.chPacketId = byteData.subarray(index, index + nPacketIDLength);
+      index += nPacketIDLength;
+      result.chMac = String.fromCharCode.apply(null, byteData.subarray(index, index + nMacAddressLength));
+      // console.log("mac address:", result.chMac);
+      index += nMacAddressLength;
+      result.chIP = String.fromCharCode.apply(null, byteData.subarray(index, index + nIPAddressLength));
+      // console.log("IP address:", result.chIP);
+      index += nIPAddressLength;
+      result.chSubnetMask = String.fromCharCode.apply(null, byteData.subarray(index, index + nSubnetMaskLength));
+      // console.log("subnet mask:", result.chSubnetMask);
+      index += nSubnetMaskLength;
+      result.chGateway = String.fromCharCode.apply(null, byteData.subarray(index, index + nGatewayLength));
+      // console.log("gateway:", result.chGateway);
+      index += nGatewayLength;
+      result.chPassword = String.fromCharCode.apply(null, byteData.subarray(index, index + nChangePasswordLgenth));
+      // console.log("chPassword:", result.chPassword);
+      index += nChangePasswordLgenth;
+      result.Reserved1 = byteData.subarray(index, index + nReservedLegnth);
+      index += nReservedLegnth;
+      result.nPort = ntohs(byteData.subarray(index, index + nPortLength), true);
+      // console.log("port:", result.nPort);
+      index += nPortLength;
+      result.nStatus = byteData.subarray(index, index + nStatusLength);
+      // console.log("status:", result.nStatus);
+      index += nStatusLength;
+      result.chDeviceName = String.fromCharCode.apply(null, byteData.subarray(index, index + nDeviceNameLength));
+      // console.log("device name:", result.chDeviceName);
+      index += nDeviceNameLength;
+      result.Reserved2 = byteData.subarray(index, index + nReservedLegnth);
+      index += nReservedLegnth;
+      result.nHttpPort = ntohs(byteData.subarray(index, index + nPortLength), true);
+      // console.log("http port:", result.nHttpPort);
+      index += nPortLength;
+      result.nDevicePort = ntohs(byteData.subarray(index, index + nPortLength), true);
+      // console.log("device port:", result.nDevicePort);
+      index += nPortLength;
+      result.nTcpPort = ntohs(byteData.subarray(index, index + nPortLength), true);
+      // console.log("tcp port:", result.nTcpPort);
+      index += nPortLength;
+      result.nUdpPort = ntohs(byteData.subarray(index, index + nPortLength), true);
+      // console.log("udp port:", result.nUdpPort);
+      index += nPortLength;
+      result.nUploadPort = ntohs(byteData.subarray(index, index + nPortLength), true);
+      // console.log("upload port:", result.nUploadPort);
+      index += nPortLength;
+      result.nMulticastPort = ntohs(byteData.subarray(index, index + nPortLength), true);
+      // console.log("multicast port:", result.nMulticastPort);
+      index += nPortLength;
+      result.nNetworkMode = byteData.subarray(index, index + nNetworkModeLength);
+      // console.log("network mode:", result.nNetworkMode);
+      index += nNetworkModeLength;
+      result.chDDNS = String.fromCharCode.apply(null, byteData.subarray(index, index + nchDDNSLength));
+      // console.log("ddns:", result.chDDNS);
+      index += nchDDNSLength;
 
       console.log("result", result);
-    //   console.log("received:", ab2str(info.data));
-    // var cameraInfo = cameraFormat.parse(info.data);
 
-    //   var mac = info.data.subarray(19, 18);
-    //   var ip = info.data.subarray(37, 18);
-
-    //   console.log("mac", mac, "ip", ip);
+      var str = resultElement.value;
+      var temp = "Device Name:" + result.chDeviceName + ", Mac Address: " + result.chMac + ", IP: " + result.chIP + ", port: " + result.nHttpPort + ", URL: " + result.chDDNS + "\r\n";
+      str += temp;
+      resultElement.value = str;
+      scrollbottom();
     }
 
     $("#init").click(function(){
-        chrome.sockets.udp.create({}, onCreate);
+      resultElement = $("#result")[0];
+      chrome.sockets.udp.create({}, onCreate);
     });
 
     $("#broadcast").click(function(){
