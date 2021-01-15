@@ -10,8 +10,8 @@
 // https://stackoverflow.com/questions/47480990/chrome-sockets-udp-how-to-successfully-broadcast
 $(function(){
     var chat;
-    var listeningSocketId;
-    var sendingSocketId;
+    var listeningSocketId = null;
+    var sendingSocketId = null;
     // use node module
     var SENDPORT = 7701;   // camera send port
     var RECEIVEPORT = 7711;   // camera send port
@@ -45,6 +45,10 @@ $(function(){
 
     var str = 'SMC_DISCOVERY_MAGIC_IDENTIFIER';
     chrome = window['chrome'];
+
+    window.onload = function() {
+      console.log("onload");
+    }
 
     var htonl = function (h) {
       // Mask off 8 bytes at a time then shift them into place
@@ -151,17 +155,20 @@ $(function(){
 		}
 
     function onCreate(socketInfo) {
-      console.log("socket created: " + socketInfo.socketId);
+      // console.log("socket created: " + socketInfo.socketId);
     //   chrome.test.assertTrue(socketId > 0, "failed to create socket");
 
-      if (listeningSocketId == undefined) {
+      if (typeof listeningSocketId !== 'undefined' &&
+          listeningSocketId === null) {
         listeningSocketId = socketInfo.socketId;
+        console.log("listening socket Id: " + listeningSocketId);
         chrome.sockets.udp.onReceive.addListener(onReceive);
         chrome.sockets.udp.onReceiveError.addListener(onReceiveError);
         chrome.sockets.udp.bind(
             listeningSocketId, "0.0.0.0", RECEIVEPORT, onBindListening);
       } else {
         sendingSocketId = socketInfo.socketId;
+        console.log("sending socket Id: " + sendingSocketId);
         chrome.sockets.udp.bind(
             sendingSocketId, "127.0.0.1", SENDPORT, onBindSending);
       }
@@ -170,7 +177,11 @@ $(function(){
     function onBindListening(result) {
       //   chrome.test.assertEq(0, result, "Bind failed with error: " + result);
       if (result < 0) {
-        console.log("Bind failed with error: " + result);
+        console.log("Listening Bind failed with error: " + result + ", last error:" + chrome.runtime.lastError.message);
+        chrome.sockets.udp.close(listeningSocketId, function() {
+          listeningSocketId = null;
+        });
+
         return;
       }
 
@@ -178,16 +189,30 @@ $(function(){
           listeningSocketId, true, onSetBroadcastListening);
     }
 
+    function onBindSending(result) {
+      //   chrome.test.assertEq(0, result, "Bind failed with error: " + result);
+        if (result < 0) {
+          console.log("Sending Bind failed with error: " + result + ", last error: " + chrome.runtime.lastError.message);
+          chrome.sockets.udp.close(sendingSocketId, function() {
+            sendingSocketId = null;
+          });
+          return;
+        }
+  
+        chrome.sockets.udp.setBroadcast(sendingSocketId, true, onSetBroadcastSending);
+      }
+
     function onSetBroadcastListening(result) {
       //   chrome.test.assertEq(0, result, "Failed to enable broadcast: " + result);
       if (result < 0) {
-        console.log("Failed to enable broadcast: " + result);
+        console.log("Failed to enable broadcast: " + result + ", last error: " + chrome.runtime.lastError.message);
         return;
       }
 
       // Create the sending socket.
       chrome.sockets.udp.create({}, onCreate);
     }
+    
 
     function onSetBroadcastSending(result) {
     //   chrome.test.assertEq(0, result, "Failed to enable broadcast: " + result);
@@ -214,16 +239,6 @@ $(function(){
     //   });
 
     //   string2ArrayBuffer("broadcast packet", onArrayBuffer);
-    }
-
-    function onBindSending(result) {
-    //   chrome.test.assertEq(0, result, "Bind failed with error: " + result);
-      if (result < 0) {
-          console.log("Bind failed with error: " + result);
-        return;
-      }
-
-      chrome.sockets.udp.setBroadcast(sendingSocketId, true, onSetBroadcastSending);
     }
 
     function onReceiveError(info) {
@@ -343,10 +358,43 @@ $(function(){
     });
 
     $("#disconnect").click(function(){
-        chrome.sockets.udp.close(sendingSocketId);
-        chrome.sockets.udp.close(listeningSocketId);
+        chrome.sockets.udp.close(sendingSocketId, function() {
+          sendingSocketId = null;
+        });
+        chrome.sockets.udp.close(listeningSocketId, function() {
+          listeningSocketId = null;
+        });;
         $("#disconnect").attr("disabled", "disabled");
         $("#broadcast").attr("disabled", "disabled");
         $("#init").removeAttr("disabled");
     });
+
+    function destory() {
+      alert('Handler for .unload() called.');
+      if(sendingSocketId !== null) {
+        chrome.sockets.udp.close(sendingSocketId, function() {
+          sendingSocketId = null;
+        });
+      }
+      if(listeningSocketId !== null) {
+        chrome.sockets.udp.close(listeningSocketId, function() {
+          listeningSocketId = null;
+        });;
+      }
+
+    }
+
+    // window.addEventListener('beforeunload', function(event) {
+    //   alert('Handler for .unload() called.');
+    //   if(sendingSocketId !== null) {
+    //     chrome.sockets.udp.close(sendingSocketId, function() {
+    //       sendingSocketId = null;
+    //     });
+    //   }
+    //   if(listeningSocketId !== null) {
+    //     chrome.sockets.udp.close(listeningSocketId, function() {
+    //       listeningSocketId = null;
+    //     });;
+    //   }
+    // });
 });
